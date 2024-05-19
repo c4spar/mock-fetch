@@ -1,0 +1,27 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  ci:
+    name: CI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+
+      - name: Lint
+        run: deno lint
+
+      - name: Format
+        run: deno fmt --check
+
+      - name: Test
+        run: deno test --doc
+
+      - name: Publish (dry-run)
+        run: deno publish --dry-run
