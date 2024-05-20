@@ -53,7 +53,7 @@ export function mockGlobalFetch(): void {
       throw error;
     }
 
-    match.options.signal?.throwIfAborted();
+    match.matchOptions.signal?.throwIfAborted();
 
     return mockResponse(match.mockOptions);
   };
@@ -78,25 +78,25 @@ export interface MockResponseOptions extends ResponseInit {
 /**
  * Mocks a request made with `fetch`.
  *
- * @param options     Request matcher options.
- * @param mockOptions Response mock options.
+ * @param matchOptions  Request matcher options.
+ * @param mockOptions   Response mock options.
  */
 export function mockFetch(
-  options: string | URL | URLPattern | MatchRequestOptions,
+  matchOptions: string | URL | URLPattern | MatchRequestOptions,
   mockOptions: MockResponseOptions = {},
 ): void {
   mockGlobalFetch();
   if (
-    typeof options === "string" ||
-    options instanceof URL ||
-    options instanceof URLPattern
+    typeof matchOptions === "string" ||
+    matchOptions instanceof URL ||
+    matchOptions instanceof URLPattern
   ) {
-    options = { url: options };
+    matchOptions = { url: matchOptions };
   }
 
-  const pattern = options.url ? new URLPattern(options.url) : null;
+  const pattern = matchOptions.url ? new URLPattern(matchOptions.url) : null;
 
-  mocks.push({ pattern, options, mockOptions });
+  mocks.push({ pattern, matchOptions, mockOptions });
 }
 
 /**
@@ -114,7 +114,7 @@ export function resetFetch(): void {
   if (mocks.length) {
     const error = new Error(
       `Expected ${mocks.length} more request(s) to match: ` +
-        Deno.inspect(mocks.map((m) => m.options), {
+        Deno.inspect(mocks.map((m) => m.matchOptions), {
           compact: false,
           colors: false,
           trailingComma: true,
@@ -131,20 +131,23 @@ function matchRequest(
   { method = "GET", body, headers }: RequestInit = {},
 ): FetchMock | undefined {
   for (const mock of mocks) {
-    if (mock.options.method && mock.options.method !== method?.toLowerCase()) {
+    if (
+      mock.matchOptions.method &&
+      mock.matchOptions.method !== method?.toLowerCase()
+    ) {
       continue;
     }
     if (mock.pattern && !mock.pattern.test(url)) {
       continue;
     }
-    if (mock.options.body && !equal(body, mock.options.body)) {
+    if (mock.matchOptions.body && !equal(body, mock.matchOptions.body)) {
       continue;
     }
     if (
-      mock.options.headers &&
+      mock.matchOptions.headers &&
       !equal(
         new Headers(headers).entries(),
-        new Headers(mock.options.headers).entries(),
+        new Headers(mock.matchOptions.headers).entries(),
       )
     ) {
       continue;
@@ -172,6 +175,6 @@ function mockResponse(
 
 interface FetchMock {
   pattern: URLPattern | null;
-  options: MatchRequestOptions;
+  matchOptions: MatchRequestOptions;
   mockOptions: MockResponseOptions;
 }
