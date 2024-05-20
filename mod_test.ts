@@ -54,7 +54,7 @@ Deno.test("@c4spar/mock-fetch", async (ctx) => {
         Error,
         'Unhandled fetch call: "https://example.com/"',
       );
-      resetFetch();
+      resetGlobalFetch();
     },
   });
 
