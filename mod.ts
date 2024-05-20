@@ -4,6 +4,8 @@ const mocks: Array<FetchMock> = [];
 
 const originalFetch: typeof globalThis.fetch = globalThis.fetch;
 
+let isGlobalMock = false;
+
 /**
  * Overrides the global fetch method to intercept all requests.
  *
@@ -30,32 +32,8 @@ const originalFetch: typeof globalThis.fetch = globalThis.fetch;
  * ```
  */
 export function mockGlobalFetch(): void {
-  if (globalThis.fetch !== originalFetch) {
-    return;
-  }
-
-  // deno-lint-ignore require-await
-  globalThis.fetch = async function (
-    input: string | URL | Request,
-    init?: RequestInit,
-  ): Promise<Response> {
-    const url = getUrl(input);
-    const match = matchRequest(url, init);
-
-    if (!match) {
-      const error = new Error(
-        `Unhandled fetch call: ${Deno.inspect(url)}${
-          init ? ` ${Deno.inspect(init)}` : ""
-        }`,
-      );
-      Error.captureStackTrace(error, globalThis.fetch);
-      throw error;
-    }
-
-    match.matchOptions.signal?.throwIfAborted();
-
-    return mockResponse(match.mockOptions);
-  };
+  isGlobalMock = true;
+  mockFetchApi();
 }
 
 /**
@@ -84,7 +62,8 @@ export function mockFetch(
   matchOptions: string | URL | URLPattern | MatchRequestOptions,
   mockOptions: MockResponseOptions = {},
 ): void {
-  mockGlobalFetch();
+  mockFetchApi();
+
   if (
     typeof matchOptions === "string" ||
     matchOptions instanceof URL ||
@@ -92,7 +71,6 @@ export function mockFetch(
   ) {
     matchOptions = { url: matchOptions };
   }
-
   const pattern = matchOptions.url ? new URLPattern(matchOptions.url) : null;
 
   mocks.push({ pattern, matchOptions, mockOptions });
@@ -104,10 +82,13 @@ export function mockFetch(
  * Throws an error if expected requests are still pending.
  */
 export function resetFetch(): void {
-  if (globalThis.fetch === originalFetch) {
-    return;
+  if (!isGlobalMock) {
+    if (globalThis.fetch === originalFetch) {
+      return;
+    }
+    console.log("reset fetch");
+    globalThis.fetch = originalFetch;
   }
-  globalThis.fetch = originalFetch;
 
   if (mocks.length) {
     const error = new Error(
@@ -122,6 +103,48 @@ export function resetFetch(): void {
     mocks.splice(0, mocks.length);
     throw error;
   }
+}
+
+/**
+ * Disables global fetch mock and restores the original global `fetch` function.
+ *
+ * Throws an error if expected requests are still pending.
+ */
+export function resetGlobalFetch() {
+  if (!isGlobalMock) {
+    return;
+  }
+  isGlobalMock = false;
+  resetFetch();
+}
+
+function mockFetchApi() {
+  if (globalThis.fetch !== originalFetch) {
+    return;
+  }
+
+  // deno-lint-ignore require-await
+  globalThis.fetch = async function (
+    input: string | URL | Request,
+    init?: RequestInit,
+  ): Promise<Response> {
+    const url = getUrl(input);
+    const match = matchRequest(url, init);
+
+    if (!match) {
+      const error = new Error(
+        `Unhandled fetch call: ${Deno.inspect(url)}${
+          init ? ` ${Deno.inspect(init)}` : ""
+        }`,
+      );
+      Error.captureStackTrace(error, globalThis.fetch);
+      throw error;
+    }
+
+    match.matchOptions.signal?.throwIfAborted();
+
+    return mockResponse(match.mockOptions);
+  };
 }
 
 function matchRequest(

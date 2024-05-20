@@ -5,16 +5,42 @@ import {
   assertRejects,
   assertThrows,
 } from "@std/assert";
-import { mockFetch, mockGlobalFetch, resetFetch } from "./mod.ts";
+import {
+  mockFetch,
+  mockGlobalFetch,
+  resetFetch,
+  resetGlobalFetch,
+} from "./mod.ts";
 
 Deno.test("@c4spar/mock-fetch", async (ctx) => {
   await ctx.step({
     name: "should init and reset mockFetch",
-    fn() {
+    async fn() {
+      const originalFetch = globalThis.fetch;
+      mockFetch("https://example.com/");
+      assertNotEquals(originalFetch, globalThis.fetch);
+
+      await fetch("https://example.com/");
+
+      resetFetch();
+      assertEquals(originalFetch, globalThis.fetch);
+    },
+  });
+
+  await ctx.step({
+    name: "should init and reset mockFetch globally",
+    async fn() {
       const originalFetch = globalThis.fetch;
       mockGlobalFetch();
       assertNotEquals(originalFetch, globalThis.fetch);
+
+      mockFetch("https://example.com/");
+      assertNotEquals(originalFetch, globalThis.fetch);
+      await fetch("https://example.com/");
       resetFetch();
+      assertNotEquals(originalFetch, globalThis.fetch);
+
+      resetGlobalFetch();
       assertEquals(originalFetch, globalThis.fetch);
     },
   });
