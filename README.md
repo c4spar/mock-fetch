@@ -2,7 +2,6 @@
 
 [![JSR](https://jsr.io/badges/@c4spar/mock-fetch)](https://jsr.io/@c4spar/mock-fetch)
 [![JSR Score](https://jsr.io/badges/@c4spar/mock-fetch/score)](https://jsr.io/@c4spar/mock-fetch)
-[![JSR Scope](https://jsr.io/badges/@c4spar)](https://jsr.io/@c4spar)
 
 Test utilities to intercept and mock requests made with `fetch` using the
 [URLPattern](https://developer.mozilla.org/en-US/docs/Web/API/URLPattern) web
