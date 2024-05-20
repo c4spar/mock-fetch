@@ -26,7 +26,7 @@ Deno.test("@c4spar/mock-fetch", async (ctx) => {
       await assertRejects(
         () => fetch("https://example.com/"),
         Error,
-        'Unhandled fetch call(s): "https://example.com/"',
+        'Unhandled fetch call: "https://example.com/"',
       );
       resetFetch();
     },

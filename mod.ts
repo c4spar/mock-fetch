@@ -45,7 +45,7 @@ export function mockGlobalFetch(): void {
 
     if (!match) {
       const error = new Error(
-        `Unhandled fetch call(s): ${Deno.inspect(url)}${
+        `Unhandled fetch call: ${Deno.inspect(url)}${
           init ? ` ${Deno.inspect(init)}` : ""
         }`,
       );
