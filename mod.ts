@@ -2,7 +2,7 @@ import { equal } from "@std/assert/equal";
 
 const mocks: Array<FetchMock> = [];
 
-let originalFetch: typeof globalThis.fetch | null;
+const originalFetch: typeof globalThis.fetch = globalThis.fetch;
 
 /**
  * Overrides the global fetch method to intercept all requests.
@@ -30,10 +30,9 @@ let originalFetch: typeof globalThis.fetch | null;
  * ```
  */
 export function mockGlobalFetch(): void {
-  if (originalFetch) {
+  if (globalThis.fetch !== originalFetch) {
     return;
   }
-  originalFetch = globalThis.fetch;
 
   // deno-lint-ignore require-await
   globalThis.fetch = async function (
@@ -105,11 +104,10 @@ export function mockFetch(
  * Throws an error if expected requests are still pending.
  */
 export function resetFetch(): void {
-  if (!originalFetch) {
+  if (globalThis.fetch === originalFetch) {
     return;
   }
   globalThis.fetch = originalFetch;
-  originalFetch = null;
 
   if (mocks.length) {
     const error = new Error(
