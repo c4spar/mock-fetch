@@ -1,3 +1,33 @@
+/**
+ * Test utilities to intercept and mock requests made with `fetch` using the
+ * {@linkcode URLPattern} web api.
+ *
+ * @example Mock a request made with fetch.
+ *
+ * ```ts
+ * import { assertEquals } from "@std/assert";
+ * import { mockFetch, resetFetch } from "@c4spar/mock-fetch";
+ *
+ * Deno.test({
+ *   name: "should mock a request made with fetch",
+ *   async fn() {
+ *     mockFetch("https://example.com/user/:id", {
+ *       body: JSON.stringify({ name: "foo" }),
+ *     });
+ *
+ *     const resp = await fetch("https://example.com/user/123");
+ *     const body = await resp.json();
+ *
+ *     assertEquals(resp.status, 200);
+ *     assertEquals(body, { name: "foo" });
+ *
+ *     resetFetch();
+ *   },
+ * });
+ * ```
+ *
+ * @module
+ */
 import { equal } from "@std/assert/equal";
 
 const mocks: Array<FetchMock> = [];
@@ -7,27 +37,48 @@ const originalFetch: typeof globalThis.fetch = globalThis.fetch;
 let isGlobalMock = false;
 
 /**
- * Overrides the global fetch method to intercept all requests.
+ * Overrides the global `fetch` method to intercept all requests from all test
+ * steps.
  *
- * This function is called automatically as soon as `mockFetch` is called.
- * You can call this method during the test setup to ensure that no real
- * requests are made together with the `resetMock` function in the test teardown
- * phase to restore the original `fetch` function.
+ * This function can be called additionally during the test setup to ensure
+ * that no real requests are made in any tests.
+ *
+ * > [!IMPORTANT]
+ * > If used, you should call additionally the {@linkcode resetGlobalFetch}
+ * > function in the teardown phase from your test to restore the original
+ * > `fetch` function.
+ *
+ * > [!IMPORTANT]
+ * > If this function is called, the {@linkcode resetFetch} function is not
+ * > restoring the original fetch method unless {@linkcode resetGlobalFetch} is
+ * > called.
+ *
+ * @example Ensure all requests are intercepted
+ *
+ * This ensures that the `fetch` method throws an error if you run a test that
+ * doesn't call {@linkcode mockFetch} within the test itself.
  *
  * ```ts
- * import { mockGlobalFetch, resetFetch } from "./mod.ts";
+ * import { assertRejects } from "@std/assert";
+ * import { mockGlobalFetch, resetGlobalFetch } from "@c4spar/mock-fetch";
  *
  * Deno.test("Some tests", async (ctx) => {
  *   mockGlobalFetch();
  *
  *   await ctx.step({
  *     name: "should ...",
- *     fn() {
- *       // some test...
+ *     async fn() {
+ *       await assertRejects(
+ *         () => fetch("https://example.com/"),
+ *         Error,
+ *         'Unhandled fetch call: "https://example.com/"',
+ *       );
  *     },
  *   });
  *
- *   resetFetch();
+ *   // More test steps...
+ *
+ *   resetGlobalFetch();
  * });
  * ```
  */
@@ -36,26 +87,112 @@ export function mockGlobalFetch(): void {
   mockFetchApi();
 }
 
-/**
- * Possible options that can be used to match a request made with fetch.
- */
+/** Options to match a request made with fetch. */
 export interface MatchRequestOptions
   extends Pick<RequestInit, "body" | "method" | "headers" | "signal"> {
+  /**
+   * Match a request by an url or an url pattern.
+   *
+   * @example Use the URLPattern web api
+   *
+   * ```ts
+   * import { assertEquals } from "@std/assert";
+   * import { mockFetch, resetFetch } from "@c4spar/mock-fetch";
+   *
+   * Deno.test({
+   *   name: "should mock a request made with fetch",
+   *   async fn() {
+   *     mockFetch("https://example.com/user/:id", {
+   *       body: JSON.stringify({ name: "foo" }),
+   *     });
+   *
+   *     const resp = await fetch("https://example.com/user/123");
+   *     const body = await resp.json();
+   *
+   *     assertEquals(resp.status, 200);
+   *     assertEquals(body, { name: "foo" });
+   *
+   *     resetFetch();
+   *   },
+   * });
+   * ```
+   */
   url?: string | URL | URLPattern;
+  /**
+   * An {@linkcode AbortSignal} which can be used to abort a mocked request.
+   *
+   * @example Abort a request
+   *
+   * ```ts
+   * import { assertRejects } from "@std/assert";
+   * import { mockFetch, resetFetch } from "@c4spar/mock-fetch";
+   *
+   * Deno.test({
+   *   name: "should abort a request made with fetch",
+   *   fn() {
+   *     const controller = new AbortController();
+   *     controller.abort(new Error("aborted"));
+   *
+   *     mockFetch({
+   *       url: "https://example.com/",
+   *       signal: controller.signal,
+   *     });
+   *
+   *     assertRejects(
+   *       () => fetch("https://example.com/"),
+   *       Error,
+   *       "aborted",
+   *     );
+   *     resetFetch();
+   *   },
+   * });
+   * ```
+   */
+  signal?: AbortSignal | null;
 }
 
-/**
- * Possible options that can be used to mock a response from a request made with
- * fetch.
- */
+/** Options to mock a response from a request made with fetch. */
 export interface MockResponseOptions extends ResponseInit {
+  /** Mock response body.*/
   body?: BodyInit | null;
 }
 
 /**
  * Mocks a request made with `fetch`.
  *
- * @param matchOptions  Request matcher options.
+ * The {@linkcode mockFetch} function can be used to mock a request made with
+ * fetch. {@linkcode mockFetch} can be called multiple times to mock multiple
+ * request.
+ *
+ * > [!IMPORTANT]
+ * > Make sure to call {@linkcode resetFetch} once at the end of each test step
+ * > to restore the original fetch method.
+ *
+ * @example Mock fetch call(s)
+ *
+ * ```ts
+ * import { assertEquals } from "@std/assert";
+ * import { mockFetch, resetFetch } from "@c4spar/mock-fetch";
+ *
+ * Deno.test({
+ *   name: "should mock a request made with fetch",
+ *   async fn() {
+ *     mockFetch("https://example.com/", {
+ *       body: JSON.stringify({ foo: "bar" }),
+ *     });
+ *
+ *     const resp = await fetch("https://example.com/");
+ *     const body = await resp.json();
+ *
+ *     assertEquals(resp.status, 200);
+ *     assertEquals(body, { foo: "bar" });
+ *
+ *     resetFetch();
+ *   },
+ * });
+ * ```
+ *
+ * @param matchOptions  Request match options.
  * @param mockOptions   Response mock options.
  */
 export function mockFetch(
@@ -79,14 +216,18 @@ export function mockFetch(
 /**
  * Restores the original global `fetch` function.
  *
- * Throws an error if expected requests are still pending.
+ * Throws additionally an error if expected requests are still pending.
+ *
+ * > [!IMPORTANT]
+ * > If {@linkcode mockGlobalFetch} is called, this function will not restore
+ * > the original global fetch function unless {@linkcode resetGlobalFetch} is
+ * > called.
  */
 export function resetFetch(): void {
   if (!isGlobalMock) {
     if (globalThis.fetch === originalFetch) {
       return;
     }
-    console.log("reset fetch");
     globalThis.fetch = originalFetch;
   }
 
@@ -108,7 +249,7 @@ export function resetFetch(): void {
 /**
  * Disables global fetch mock and restores the original global `fetch` function.
  *
- * Throws an error if expected requests are still pending.
+ * Throws additionally an error if expected requests are still pending.
  */
 export function resetGlobalFetch() {
   if (!isGlobalMock) {
