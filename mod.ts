@@ -53,6 +53,8 @@ export function mockGlobalFetch(): void {
       throw error;
     }
 
+    match.options.signal?.throwIfAborted();
+
     return mockResponse(match.mockOptions);
   };
 }
@@ -61,7 +63,7 @@ export function mockGlobalFetch(): void {
  * Possible options that can be used to match a request made with fetch.
  */
 export interface MatchRequestOptions
-  extends Pick<RequestInit, "body" | "method" | "headers"> {
+  extends Pick<RequestInit, "body" | "method" | "headers" | "signal"> {
   url?: string | URL | URLPattern;
 }
 

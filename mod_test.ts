@@ -120,6 +120,21 @@ Deno.test("@c4spar/mock-fetch", async (ctx) => {
   });
 
   await ctx.step({
+    name: "should throw if signal is aborted",
+    fn() {
+      const controller = new AbortController();
+      mockFetch({ signal: controller.signal });
+      controller.abort(new Error("aborted"));
+      assertRejects(
+        () => fetch("https://example.com/"),
+        Error,
+        "aborted",
+      );
+      resetFetch();
+    },
+  });
+
+  await ctx.step({
     name: "should mock response body",
     async fn() {
       const testData = { data: "test-data" };
