@@ -1,11 +1,12 @@
-name: CI
+name: CI/CD
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
+  release:
+    types: [ published ]
 jobs:
   ci:
-    name: CI
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -24,4 +25,22 @@ jobs:
         run: deno test --doc
 
       - name: Publish (dry-run)
+        if: github.event_name != 'release'
         run: deno publish --dry-run
+
+  cd:
+    if: github.event_name == 'release'
+    needs: ci
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+
+      - name: Publish
+        run: deno publish
