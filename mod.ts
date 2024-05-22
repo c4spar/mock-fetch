@@ -2,7 +2,7 @@
  * Test utilities to intercept and mock requests made with {@linkcode fetch}
  * using the {@linkcode URLPattern} web api.
  *
- * @example Mock a request made with {@linkcode fetch}.
+ @example Mock {@linkcode fetch} in a single test.
  *
  * ```ts
  * import { assertEquals } from "@std/assert";
@@ -26,6 +26,43 @@
  * });
  * ```
  *
+ * @example Mock {@linkcode fetch} for all tests in a test file.
+ *
+ * ```ts
+ * import { assertEquals } from "@std/assert";
+ * import {
+ *   mockFetch,
+ *   mockGlobalFetch,
+ *   resetFetch,
+ *   resetGlobalFetch,
+ * } from "@c4spar/mock-fetch";
+ *
+ * Deno.test("MyLib", async (ctx) => {
+ *   mockGlobalFetch();
+ *
+ *   await ctx.step({
+ *     name: "should mock a request made with fetch",
+ *     async fn() {
+ *       mockFetch("https://example.com/user/:id", {
+ *         body: JSON.stringify({ name: "foo" }),
+ *       });
+ *
+ *       const resp = await fetch("https://example.com/user/123");
+ *       const body = await resp.json();
+ *
+ *       assertEquals(resp.status, 200);
+ *       assertEquals(body, { name: "foo" });
+ *
+ *       resetFetch();
+ *     },
+ *   });
+ *
+ *   // More test steps...
+ *
+ *   resetGlobalFetch();
+ * });
+ * ```
+ *
  * @module
  */
 import { equal } from "@std/assert/equal";
@@ -37,11 +74,11 @@ const originalFetch: typeof globalThis.fetch = globalThis.fetch;
 let isGlobalMock = false;
 
 /**
- * Overrides the global {@linkcode fetch} method to intercept all requests from all test
- * steps.
+ * Overrides the global {@linkcode fetch} function to intercept all requests
+ * from all test steps.
  *
- * This function can be called additionally during the test setup to ensure
- * that no real requests are made in any tests.
+ * This function can be called additionally during the test setup to ensure that
+ * no real requests are made in any tests.
  *
  * > [!IMPORTANT]
  * > If used, you should call additionally the {@linkcode resetGlobalFetch}
@@ -50,19 +87,19 @@ let isGlobalMock = false;
  *
  * > [!IMPORTANT]
  * > If this function is called, the {@linkcode resetFetch} function is not
- * > restoring the original {@linkcode fetch} method unless
+ * > restoring the original {@linkcode fetch} function unless
  * > {@linkcode resetGlobalFetch} is called.
  *
  * @example Ensure all requests are intercepted
  *
- * This ensures that the {@linkcode fetch} method throws an error if you run a
+ * This ensures that the {@linkcode fetch} function throws an error if you run a
  * test that doesn't call {@linkcode mockFetch} within the test itself.
  *
  * ```ts
  * import { assertRejects } from "@std/assert";
  * import { mockGlobalFetch, resetGlobalFetch } from "@c4spar/mock-fetch";
  *
- * Deno.test("Some tests", async (ctx) => {
+ * Deno.test("MyLib", async (ctx) => {
  *   mockGlobalFetch();
  *
  *   await ctx.step({
@@ -166,7 +203,7 @@ export interface MockResponseOptions extends ResponseInit {
  *
  * > [!IMPORTANT]
  * > Make sure to call {@linkcode resetFetch} once at the end of each test step
- * > to restore the original {@linkcode fetch} method.
+ * > to restore the original {@linkcode fetch} function.
  *
  * @example Mock {@linkcode fetch} call(s)
  *
