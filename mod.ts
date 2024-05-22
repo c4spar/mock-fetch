@@ -1,8 +1,8 @@
 /**
- * Test utilities to intercept and mock requests made with `fetch` using the
- * {@linkcode URLPattern} web api.
+ * Test utilities to intercept and mock requests made with {@linkcode fetch}
+ * using the {@linkcode URLPattern} web api.
  *
- * @example Mock a request made with fetch.
+ * @example Mock a request made with {@linkcode fetch}.
  *
  * ```ts
  * import { assertEquals } from "@std/assert";
@@ -37,7 +37,7 @@ const originalFetch: typeof globalThis.fetch = globalThis.fetch;
 let isGlobalMock = false;
 
 /**
- * Overrides the global `fetch` method to intercept all requests from all test
+ * Overrides the global {@linkcode fetch} method to intercept all requests from all test
  * steps.
  *
  * This function can be called additionally during the test setup to ensure
@@ -46,17 +46,17 @@ let isGlobalMock = false;
  * > [!IMPORTANT]
  * > If used, you should call additionally the {@linkcode resetGlobalFetch}
  * > function in the teardown phase from your test to restore the original
- * > `fetch` function.
+ * > {@linkcode fetch} function.
  *
  * > [!IMPORTANT]
  * > If this function is called, the {@linkcode resetFetch} function is not
- * > restoring the original fetch method unless {@linkcode resetGlobalFetch} is
- * > called.
+ * > restoring the original {@linkcode fetch} method unless
+ * > {@linkcode resetGlobalFetch} is called.
  *
  * @example Ensure all requests are intercepted
  *
- * This ensures that the `fetch` method throws an error if you run a test that
- * doesn't call {@linkcode mockFetch} within the test itself.
+ * This ensures that the {@linkcode fetch} method throws an error if you run a
+ * test that doesn't call {@linkcode mockFetch} within the test itself.
  *
  * ```ts
  * import { assertRejects } from "@std/assert";
@@ -87,7 +87,7 @@ export function mockGlobalFetch(): void {
   mockFetchApi();
 }
 
-/** Options to match a request made with fetch. */
+/** Options to match a request made with {@linkcode fetch}. */
 export interface MatchRequestOptions
   extends Pick<RequestInit, "body" | "method" | "headers" | "signal"> {
   /**
@@ -151,24 +151,24 @@ export interface MatchRequestOptions
   signal?: AbortSignal | null;
 }
 
-/** Options to mock a response from a request made with fetch. */
+/** Options to mock a response from a request made with {@linkcode fetch}. */
 export interface MockResponseOptions extends ResponseInit {
   /** Mock response body.*/
   body?: BodyInit | null;
 }
 
 /**
- * Mocks a request made with `fetch`.
+ * Mocks a request made with {@linkcode fetch}.
  *
  * The {@linkcode mockFetch} function can be used to mock a request made with
- * fetch. {@linkcode mockFetch} can be called multiple times to mock multiple
- * request.
+ * {@linkcode fetch}. {@linkcode mockFetch} can be called multiple times to mock
+ * multiple request.
  *
  * > [!IMPORTANT]
  * > Make sure to call {@linkcode resetFetch} once at the end of each test step
- * > to restore the original fetch method.
+ * > to restore the original {@linkcode fetch} method.
  *
- * @example Mock fetch call(s)
+ * @example Mock {@linkcode fetch} call(s)
  *
  * ```ts
  * import { assertEquals } from "@std/assert";
@@ -214,14 +214,14 @@ export function mockFetch(
 }
 
 /**
- * Restores the original global `fetch` function.
+ * Restores the original global {@linkcode fetch} function.
  *
  * Throws additionally an error if expected requests are still pending.
  *
  * > [!IMPORTANT]
  * > If {@linkcode mockGlobalFetch} is called, this function will not restore
- * > the original global fetch function unless {@linkcode resetGlobalFetch} is
- * > called.
+ * > the original global {@linkcode fetch} function unless
+ * > {@linkcode resetGlobalFetch} is called.
  */
 export function resetFetch(): void {
   if (!isGlobalMock) {
@@ -247,7 +247,8 @@ export function resetFetch(): void {
 }
 
 /**
- * Disables global fetch mock and restores the original global `fetch` function.
+ * Disables global {@linkcode fetch} mock and restores the original global
+ * {@linkcode fetch} function.
  *
  * Throws additionally an error if expected requests are still pending.
  */
