@@ -7,7 +7,8 @@ Test utilities to intercept and mock requests made with `fetch` using the
 [URLPattern](https://developer.mozilla.org/en-US/docs/Web/API/URLPattern) web
 api.
 
-> [!NOTE] The full documentation can be found on
+> [!NOTE]\
+> The full documentation can be found on
 > [jsr.io](https://jsr.io/@c4spar/mock-fetch).
 
 ### Examples
