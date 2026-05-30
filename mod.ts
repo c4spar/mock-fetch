@@ -73,6 +73,15 @@ const originalFetch: typeof globalThis.fetch = globalThis.fetch;
 
 let isGlobalMock = false;
 
+function defineFetch(fetch: typeof globalThis.fetch): void {
+  Object.defineProperty(globalThis, "fetch", {
+    value: fetch,
+    writable: true,
+    enumerable: true,
+    configurable: true,
+  });
+}
+
 /**
  * Overrides the global {@linkcode fetch} function to intercept all requests
  * from all test steps.
@@ -265,7 +274,7 @@ export function resetFetch(): void {
     if (globalThis.fetch === originalFetch) {
       return;
     }
-    globalThis.fetch = originalFetch;
+    defineFetch(originalFetch);
   }
 
   if (mocks.length) {
@@ -303,7 +312,7 @@ function mockFetchApi() {
   }
 
   // deno-lint-ignore require-await
-  globalThis.fetch = async function (
+  const mockedFetch: typeof globalThis.fetch = async function (
     input: string | URL | Request,
     init?: RequestInit,
   ): Promise<Response> {
@@ -316,7 +325,7 @@ function mockFetchApi() {
           init ? ` ${Deno.inspect(init)}` : ""
         }`,
       );
-      Error.captureStackTrace(error, globalThis.fetch);
+      Error.captureStackTrace(error, mockedFetch);
       throw error;
     }
 
@@ -324,6 +333,8 @@ function mockFetchApi() {
 
     return mockResponse(match.mockOptions);
   };
+
+  defineFetch(mockedFetch);
 }
 
 function matchRequest(
